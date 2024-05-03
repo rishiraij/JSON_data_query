@@ -93,12 +93,13 @@ if 'uploaded' not in st.session_state or st.session_state.uploaded == False:
     upload_button = upload_holder.button("Upload")
 
     if json_file is not None and upload_button:
-        try:
+        # try:
             client, db, collection = upload_mongodb(json_file)
             file_holder.empty()
             upload_holder.empty()
             st.session_state.uploaded = True
-        except:
+        # except:
+            
             st.error("Unable to upload JSON file.")
             st.session_state.uploaded = False
 
