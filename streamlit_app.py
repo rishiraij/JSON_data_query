@@ -6,6 +6,19 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from openai import OpenAI
 
+import requests
+
+def get_external_ip():
+    response = requests.get("https://api64.ipify.org?format=json")
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("ip")
+    else:
+        return "Unknown"
+
+external_ip = get_external_ip()
+st.write("External IP:", external_ip)
+
 uri = "mongodb+srv://rishiraij:5MQ06RORfLYOHkji@100x-assessment.ptowryu.mongodb.net/?retryWrites=true&w=majority&appName=100x-Assessment"
 
 sample_out = """[
@@ -93,13 +106,12 @@ if 'uploaded' not in st.session_state or st.session_state.uploaded == False:
     upload_button = upload_holder.button("Upload")
 
     if json_file is not None and upload_button:
-        # try:
+        try:
             client, db, collection = upload_mongodb(json_file)
             file_holder.empty()
             upload_holder.empty()
             st.session_state.uploaded = True
-        # except:
-            
+        except:
             st.error("Unable to upload JSON file.")
             st.session_state.uploaded = False
 
