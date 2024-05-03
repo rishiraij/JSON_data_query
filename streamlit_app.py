@@ -6,18 +6,7 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from openai import OpenAI
 
-import requests
-
-def get_external_ip():
-    response = requests.get("https://api64.ipify.org?format=json")
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("ip")
-    else:
-        return "Unknown"
-
-external_ip = get_external_ip()
-st.write("External IP:", external_ip)
+# MongoDB variable and sample prompts/outputs
 
 uri = "mongodb+srv://rishiraij:5MQ06RORfLYOHkji@100x-assessment.ptowryu.mongodb.net/?retryWrites=true&w=majority&appName=100x-Assessment"
 
@@ -27,7 +16,7 @@ sample_out = """[
     {"$limit": 1}
 ]"""
 
-prompt = prompt = """You will generate a MongoDB aggregation pipeline to help answer a user question based on a given MongoDB collection. 
+prompt = """You will generate a MongoDB aggregation pipeline to help answer a user question based on a given MongoDB collection. 
 
 Please ensure that each pipeline stage specification object contains exactly one field. 
 You may have a pipeline with multiple stages, but the key and value of each stage must be encapsulated in curly brackets. 
@@ -44,6 +33,8 @@ The question is: {query}
 
 Return a JSON formatted aggregation pipeline that can be passed directly to the aggregate call."""
 
+# Call to OpenAI/MongoDB aggregation with error processing
+
 def get_response(query, collection):
 
     sample_document = str(collection.find_one())
@@ -53,7 +44,7 @@ def get_response(query, collection):
             {"role": "user", "content": query}
     ]
     response = llm.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-4-turbo",
         messages=messages,
         temperature=0.0
     )
@@ -64,7 +55,7 @@ def get_response(query, collection):
         error = str(e)
         messages.append({"role": "system", "content": f"The attempt to run the following aggregation pipeline: \n'{llm_out}'\n returned the following error: {error}. \nPlease fix the error and try again."})
         retry = llm.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4-turbo",
             messages=messages,
             temperature=0.2
         )
@@ -76,7 +67,7 @@ def get_response(query, collection):
     aggregated_response = '\n'.join([str(w) for w in aggregated])
     messages.append({"role": "system", "content": f"The aggregation pipeline for the user query '{query}' returned the following JSON object: {aggregated_response}. \nPlease answer the original query in one sentence based on the returned JSON object."})
     natural_language_response = llm.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-4-turbo",
         messages=messages
     )
     return(natural_language_response.choices[0].message.content)
@@ -88,6 +79,8 @@ def getMongoDB():
     collection = db.example_member_info
     return client, db, collection
 
+# Allows for upload of any JSON file
+
 def upload_mongodb(file_name):
     client, db, collection = getMongoDB()
     collection.delete_many({})
@@ -96,6 +89,7 @@ def upload_mongodb(file_name):
     collection.insert_many(json_contents)
     return client, db, collection
 
+# Streamlit front end
 
 st.title("Chat with your JSON data!")
 st.write("This is a tool to interact with JSON data using natural language")
